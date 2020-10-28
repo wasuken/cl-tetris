@@ -1,0 +1,22 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init forms
+  (ros:ensure-asdf)
+  #+quicklisp(ql:quickload '(:mylib :cl-tetris) :silent t)
+  )
+
+(defpackage :ros.script.run.3812787017
+  (:use :cl))
+(in-package :ros.script.run.3812787017)
+
+(defun main (&rest argv)
+  (declare (ignorable argv))
+  (handler-case
+	  (cl-tetris:main)
+	(error (e)
+	  (format *standard-output* "~&Error: ~A~%" e)
+	  (uiop:quit -1))))
+;;; vim: set ft=lisp lisp:
