@@ -1,6 +1,13 @@
 (defpackage cl-tetris
   (:use :cl :mylib)
-  (:export :main))
+  (:export :main
+		   :replace-map
+		   :put-block
+		   :check-apl
+		   :update-map
+		   :move
+		   :gen-map)
+  )
 (in-package :cl-tetris)
 
 (defparameter *map* '())
@@ -24,11 +31,15 @@
 							  (t blank)))))
 
 (defun replace-map (map x y v)
-  (loop for i from 0 to (1- (length map))
-	 collect (loop for j from 0 to (1- (length (car map)))
-				collect (cond ((and (= x i) (= y j))
-							   v)
-							  (t (nth j (nth i map)))))))
+  (if (or (< (1- (length map)) x)
+		  (< (1- (length (car map))) y))
+	  map
+	  (loop for i from 0 to (1- (length map))
+		 collect (loop for j from 0 to (1- (length (car map)))
+					collect (cond ((and (= x i) (= y j))
+								   v)
+								  (t (nth j (nth i map)))))))
+  )
 
 (defun pie-convert (block before after)
   (mapcar #'(lambda (x)
@@ -95,6 +106,9 @@
 			 do (setf new-map
 					  (replace-map new-map i j (nth (- j point-x) (nth i manuf-block))))))
 	new-map))
+
+(defun map-endp (map)
+  (some #'(lambda (x) (= x *block*)) (car map)))
 
 (defun check-apl (map node-lst apl)
   (let ((max-y (length map))
