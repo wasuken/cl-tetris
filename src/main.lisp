@@ -112,9 +112,10 @@
 
 (defun check-apl (map node-lst apl)
   (let ((max-y (length map))
+		(max-x (length (car map)))
 		(fst (car apl)))
 	(cond ((null apl) t)
-		  ((>= (car fst) max-y) nil)
+		  ((or (>= (car fst) max-y) (>= (cdr fst) max-x)) nil)
 		  (t (let* ((eq (find (nth (cdr fst)
 								   (nth (car fst) map))
 							  node-lst)))
@@ -131,20 +132,31 @@
 (defun update-map (map apl value)
   (if (null apl)
 	  map
-	  (let ((point (car apl))
-			   (updating-map map))
-		   (setf (nth (cdr point) (nth (car point) updating-map)) value)
-		   (update-map updating-map (cdr apl) value))))
+	  (let* ((point (car apl))
+			 (max-y (length map))
+			 (max-x (length (car map)))
+			 (updating-map map))
+		(cond ((or (>= (car point) max-y) (>= (cdr point) max-x))
+			   (update-map updating-map (cdr apl) value))
+			  (t (setf (nth (cdr point) (nth (car point) updating-map)) value)
+				 (update-map updating-map (cdr apl) value)))
+		)))
+
+
+(defun list-eq-point (map node)
+  (let ((active-point-lst '()))
+	(loop for x from 0 to (1- (length map))
+	   do (loop for y from 0 to (1- (length (car map)))
+			 do (if (= (nth y (nth x map)) node)
+					(setf active-point-lst
+						  (append active-point-lst `((,x . ,y)))))))
+	active-point-lst))
 
 ;;; move
 ;;; 全体を動かすかんじで
 (defun move (map &optional (active-point-lst nil))
   (when (null active-point-lst)
-	(loop for x from 0 to (1- (length map))
-	   do (loop for y from 0 to (1- (length (car map)))
-			 do (if (= (nth y (nth x map)) *moving-blocks*)
-					(setf active-point-lst
-						  (append active-point-lst `((,x . ,y))))))))
+	(setf active-point-lst (list-eq-point map *moving-blocks*)))
   ;; check
   ;; 現状はゆーざの操作関係なく勝手に落ちてく状態
   (let ((moved-apl (mapcar #'(lambda (x) `(,(1+ (car x)) . ,(cdr x)))
@@ -163,10 +175,7 @@
 		  (t (update-map map active-point-lst *block*))))
   )
 
-;;; delete
-
 ;;; debug
-
 (defun var-print ()
   (format t "o~%")
   (map-print *o-pie*)
